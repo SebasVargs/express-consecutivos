@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Counter = require('./Counter.js');
 
 const consecutiveSchema = new mongoose.Schema({
   date_soli: {
@@ -9,45 +10,41 @@ const consecutiveSchema = new mongoose.Schema({
     type: String,
     required: [true, 'La descripción es obligatoria'],
     trim: true,
-    maxlength: [255, 'La descripción no puede exceder los 255 caracteres']
+    maxlength: [300, 'La descripción no puede exceder los 300 caracteres']
   },
-  status: {
+  id_user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Status',
-    required: [true, 'El estado es obligatorio']
-  },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'user',
     required: [true, 'El usuario es obligatorio']
   },
-  documents: [{
+  id_status: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Document'
-  }]
+    ref: 'status',
+    required: [true, 'El estado es obligatorio']
+  },
+  consecutivo_id: {
+    type: Number,
+  }
 }, {
   timestamps: true,
   versionKey: false,
-  toJSON: {
-    virtuals: true,
-    transform: function(doc, ret) {
-      delete ret._id;
-      return ret;
-    }
-  },
+  toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
 
-consecutiveSchema.virtual('id').get(function() {
+// Virtual para retornar el _id como id
+consecutiveSchema.virtual('id').get(function () {
   return this._id.toHexString();
 });
 
-consecutiveSchema.index({ date_soli: 1 });
-consecutiveSchema.index({ user: 1 });
-consecutiveSchema.index({ status: 1 });
-
-consecutiveSchema.pre('save', function(next) {
+consecutiveSchema.pre('save', async function (next) {
+  const counter = await Counter.findOneAndUpdate(
+    { collectionName: 'consecutive' },
+    { $inc: { count: 1 } },
+    { new: true, upsert: true } 
+  );
+  this.consecutivo_id = counter.count; 
   next();
 });
 
-module.exports = mongoose.model('Consecutive', consecutiveSchema);
+module.exports = mongoose.model('consecutive', consecutiveSchema, 'consecutive');

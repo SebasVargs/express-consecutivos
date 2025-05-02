@@ -5,15 +5,13 @@ const connectDB = async () => {
   const mongoURI = process.env.MONGODB_URI || 
     'mongodb://appUser:appPassword123@localhost:27017/appdb?authSource=appdb';
 
+  // Opciones actualizadas para Mongoose 6+
   const options = {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false,
-    poolSize: 10,
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
     family: 4
+    // Eliminar las opciones obsoletas:
+    // useNewUrlParser, useUnifiedTopology, useCreateIndex, useFindAndModify, poolSize
   };
 
   try {

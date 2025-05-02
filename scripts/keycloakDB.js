@@ -1,37 +1,28 @@
 const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
 const axios = require('axios');
-const connectDB = require('./config/database');
-const consecutiveRoutes = require('./routes/consecutiveRoutes');
-const documentRoutes = require('./routes/documentRoutes');
-const statusRoutes = require('./routes/statusRoutes');
-const rolRoutes = require('./routes/rolRoutes');
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const errorHandler = require('./middleware/errorHandler');
-require('dotenv').config();
+const mongoose = require('mongoose');
 
 const app = express();
-
-// Configuración de Keycloak
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080'; 
-const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'master';
-const KEYCLOAK_ADMIN_CLIENT_ID = process.env.KEYCLOAK_ADMIN_CLIENT_ID || 'backend-admin-client';
-const KEYCLOAK_ADMIN_CLIENT_SECRET = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET || 'am5vIvBhx3GBEwTDhWHL1EwUaaLZRn7Z';
-
-// Middlewares
 app.use(express.json());
-app.use(cors({
-  origin: ['http://192.168.1.16:4200', 'http://localhost:4200'],
-  credentials: true
-}));
-app.use(helmet());
 
-// Función para obtener el token de administrador de Keycloak
+// Configuración de Keycloak - Ajustada para versiones recientes de Keycloak
+const KEYCLOAK_URL = 'http://localhost:8080'; // Eliminamos '/auth' de la URL base
+const KEYCLOAK_REALM = 'master';
+const KEYCLOAK_ADMIN_CLIENT_ID = 'backend-admin-client'; // Cliente con roles de admin
+const KEYCLOAK_ADMIN_CLIENT_SECRET = 'UyoF2LQOgTs7XZNHRUYmRM7J6SJYPQod'; // Secreto del cliente admin
+
+// Conectar a MongoDB
+mongoose.connect('mongodb://appUser:appPassword123@localhost:27017/appdb?authSource=appdb')
+    .then(() => console.log('Conectado a MongoDB'))
+    .catch(err => console.error('Error al conectar a MongoDB:', err));
+
+// Importar modelos (asumiendo que están en archivos separados)
+const User = require('../models/User'); // Ajusta la ruta según la estructura de tu proyecto
+
+// Función para obtener el token de administrador - URL corregida
 async function getKeycloakAdminToken() {
     const params = new URLSearchParams();
-    params.append('grant_type', 'client-credentials');
+    params.append('grant_type', 'client_credentials');
     params.append('client_id', KEYCLOAK_ADMIN_CLIENT_ID);
     params.append('client_secret', KEYCLOAK_ADMIN_CLIENT_SECRET);
 
@@ -44,14 +35,10 @@ async function getKeycloakAdminToken() {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             }
         );
-        console.log('Parametros enviados a Keycloak:', params.toString());
         console.log('Token obtenido exitosamente');
         return response.data.access_token;
     } catch (error) {
         console.error('Error al obtener el token de administrador:', error.message);
-        console.error('Status:', error.response.status);
-        console.error('Headers:', error.response.headers);
-        console.error('Data:', error.response.data);
         if (error.response) {
             console.error('Detalles de la respuesta:', error.response.status, error.response.data);
         }
@@ -59,7 +46,7 @@ async function getKeycloakAdminToken() {
     }
 }
 
-// Función para registrar un usuario en Keycloak
+// Función para registrar un usuario en Keycloak - URLs corregidas
 async function registerUserInKeycloak(userData) {
     const adminToken = await getKeycloakAdminToken();
 
@@ -120,29 +107,33 @@ async function registerUserInKeycloak(userData) {
     }
 }
 
+// Ruta para registrar usuario en ambos sistemas simultáneamente
 app.post('/api/auth/register', async (req, res) => {
     const userData = req.body;
     
+    // Validar que todos los campos requeridos estén presentes
     if (!userData.name || !userData.email || !userData.password || !userData.rol) {
         return res.status(400).json({ message: 'Faltan campos requeridos' });
     }
 
     try {
+        // 1. Registrar al usuario en Keycloak y obtener su ID
         const keycloakId = await registerUserInKeycloak(userData);
-        const User = require('./models/User');
         
+        // 2. Crear objeto de usuario para MongoDB usando el modelo proporcionado
         const newUser = new User({
             name: userData.name,
             email: userData.email,
             rol: userData.rol,
             keycloakId: keycloakId,
-            status: userData.status || undefined,
+            status: userData.status || undefined, // Si se proporciona un status, lo usamos
             metadata: {
                 lastLogin: null,
                 loginCount: 0
             }
         });
         
+        // 3. Guardar en MongoDB
         await newUser.save();
 
         res.status(201).json({ 
@@ -153,11 +144,12 @@ app.post('/api/auth/register', async (req, res) => {
     } catch (error) {
         console.error('Error completo:', error);
         
+        // Manejo de errores específicos
         if (error.response && error.response.status === 409) {
             return res.status(409).json({ message: 'El usuario ya existe en Keycloak' });
         }
         
-        if (error.code === 11000) {
+        if (error.code === 11000) { // Error de MongoDB por duplicado
             return res.status(409).json({ message: 'El usuario ya existe en la base de datos' });
         }
         
@@ -168,20 +160,5 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
-// Rutas API
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/roles', rolRoutes);
-app.use('/api/consecutives', consecutiveRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/status', statusRoutes);
-
-app.use(errorHandler);
-
-connectDB().then(() => {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Servidor en puerto ${PORT}`);
-    console.log(`Keycloak configurado en: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`);
-  });
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor Express escuchando en el puerto ${PORT}`));

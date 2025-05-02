@@ -7,9 +7,9 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: [50, 'El nombre no puede exceder los 50 caracteres']
   },
-  rol: {
+  id_rol: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Rol',
+    ref: 'rol',
     required: [true, 'El rol es obligatorio']
   },
   email: {
@@ -28,13 +28,9 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
-  documents: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Document'
-  }],
   status: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Status'
+    ref: 'status'
   },
   metadata: {
     lastLogin: Date,
@@ -42,7 +38,15 @@ const userSchema = new mongoose.Schema({
       type: Number,
       default: 0
     }
-  }
+  },
+  loginToken: {
+    type: String,
+    select: false
+  },
+  loginTokenExpires: {
+    type: Date,
+    select: false
+  },
 }, {
   timestamps: true,
   versionKey: false,
@@ -60,12 +64,6 @@ userSchema.virtual('id').get(function() {
   return this._id.toHexString();
 });
 
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ name: 1 });
-userSchema.index({ keycloakId: 1 }, { unique: true, sparse: true });
+userSchema.index({ loginToken: 1, loginTokenExpires: 1 });
 
-userSchema.pre('save', function(next) {
-  next();
-});
-
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('user', userSchema, 'user');
