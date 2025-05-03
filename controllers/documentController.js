@@ -30,11 +30,36 @@ exports.getDocumentById = async (req, res) => {
 
 exports.createDocument = async (req, res) => {
   try {
-    const document = new Document(req.body);
-    const savedDocument = await document.save();
-    res.status(201).json(savedDocument);
+    const { id_consecutive } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ success: false, error: 'No se ha subido ningún archivo' });
+    }
+
+    // Crea documento según tu modelo
+    const newDocument = new Document({
+      source_file: file.originalname,
+      date_charge: new Date(),
+      id_consecutive: id_consecutive
+    });
+
+    // Guarda el documento en MongoDB
+    const savedDocument = await newDocument.save();
+    
+    // Añade información adicional para la respuesta
+    const documentResponse = {
+      ...savedDocument.toObject(),
+      filename: file.filename,
+      mimetype: file.mimetype,
+      path: file.path,
+      size: file.size
+    };
+
+    res.status(201).json({ success: true, message: 'Documento creado correctamente', document: documentResponse });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Error al crear documento:', error);
+    res.status(500).json({ success: false, error: error.message || 'Error al crear documento' });
   }
 };
 

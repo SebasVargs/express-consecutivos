@@ -85,3 +85,29 @@ exports.getConsecutivesByUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Actualizar solo el id_status de un consecutivo
+exports.updateConsecutiveStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_status } = req.body;
+
+    if (!id_status) {
+      return res.status(400).json({ error: 'El campo id_status es obligatorio.' });
+    }
+
+    const updatedConsecutive = await Consecutive.findByIdAndUpdate(
+      id,
+      { id_status },
+      { new: true, runValidators: true }
+    ).populate('id_user').populate('id_status');
+
+    if (!updatedConsecutive) {
+      return res.status(404).json({ error: 'Consecutivo no encontrado.' });
+    }
+
+    res.status(200).json(updatedConsecutive);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

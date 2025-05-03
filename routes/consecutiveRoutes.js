@@ -9,6 +9,7 @@ router.route('/')
 router.route('/:id')
   .get(consecutiveController.getConsecutiveById)
   .put(consecutiveController.updateConsecutive)
+  .patch(consecutiveController.updateConsecutiveStatus)
   .delete(consecutiveController.deleteConsecutive);
 
 router.route('/user/:userId')
