@@ -14,5 +14,5 @@ router.route('/:id')
 
 router.route('/user/:userId')
   .get(consecutiveController.getConsecutivesByUser);
-
+  
 module.exports = router;

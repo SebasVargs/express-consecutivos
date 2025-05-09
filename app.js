@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const axios = require('axios');
+const path = require('path')
 const connectDB = require('./config/database');
 const consecutiveRoutes = require('./routes/consecutiveRoutes');
 const documentRoutes = require('./routes/documentRoutes');
@@ -15,7 +16,7 @@ require('dotenv').config();
 const app = express();
 
 // Configuración de Keycloak
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080'; 
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080';
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'master';
 const KEYCLOAK_ADMIN_CLIENT_ID = process.env.KEYCLOAK_ADMIN_CLIENT_ID || 'backend-admin-client';
 const KEYCLOAK_ADMIN_CLIENT_SECRET = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET || 'am5vIvBhx3GBEwTDhWHL1EwUaaLZRn7Z';
@@ -23,10 +24,27 @@ const KEYCLOAK_ADMIN_CLIENT_SECRET = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET ||
 // Middlewares
 app.use(express.json());
 app.use(cors({
-  origin: ['http://192.168.1.16:4200', 'http://localhost:4200'],
-  credentials: true
+    origin: ['http://192.168.1.16:4200', 'http://localhost:4200'],
+    credentials: true
 }));
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:"],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'self'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'self'"],
+        },
+    },
+}));
+
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Función para obtener el token de administrador de Keycloak
 async function getKeycloakAdminToken() {
@@ -122,7 +140,7 @@ async function registerUserInKeycloak(userData) {
 
 app.post('/api/auth/register', async (req, res) => {
     const userData = req.body;
-    
+
     if (!userData.name || !userData.email || !userData.password || !userData.rol) {
         return res.status(400).json({ message: 'Faltan campos requeridos' });
     }
@@ -130,7 +148,7 @@ app.post('/api/auth/register', async (req, res) => {
     try {
         const keycloakId = await registerUserInKeycloak(userData);
         const User = require('./models/User');
-        
+
         const newUser = new User({
             name: userData.name,
             email: userData.email,
@@ -142,28 +160,28 @@ app.post('/api/auth/register', async (req, res) => {
                 loginCount: 0
             }
         });
-        
+
         await newUser.save();
 
-        res.status(201).json({ 
+        res.status(201).json({
             message: 'Usuario registrado exitosamente en Keycloak y MongoDB',
             userId: newUser.id,
             keycloakId: keycloakId
         });
     } catch (error) {
         console.error('Error completo:', error);
-        
+
         if (error.response && error.response.status === 409) {
             return res.status(409).json({ message: 'El usuario ya existe en Keycloak' });
         }
-        
+
         if (error.code === 11000) {
             return res.status(409).json({ message: 'El usuario ya existe en la base de datos' });
         }
-        
-        res.status(500).json({ 
-            message: 'Error al registrar el usuario', 
-            error: error.message 
+
+        res.status(500).json({
+            message: 'Error al registrar el usuario',
+            error: error.message
         });
     }
 });
@@ -179,9 +197,9 @@ app.use('/api/status', statusRoutes);
 app.use(errorHandler);
 
 connectDB().then(() => {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Servidor en puerto ${PORT}`);
-    console.log(`Keycloak configurado en: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`);
-  });
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`Servidor en puerto ${PORT}`);
+        console.log(`Keycloak configurado en: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`);
+    });
 });

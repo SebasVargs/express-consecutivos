@@ -17,4 +17,6 @@ router.route('/:id')
 // GET documentos por id_consecutive
 router.get('/consecutive/:consecutiveId', documentController.getDocumentsByConsecutive);
 
+router.get('/file/:filename', documentController.getDocumentFile);
+
 module.exports = router;
