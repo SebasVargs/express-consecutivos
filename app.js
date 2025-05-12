@@ -4,9 +4,6 @@ const helmet = require('helmet');
 const axios = require('axios');
 const path = require('path')
 const connectDB = require('./config/database');
-const consecutiveRoutes = require('./routes/consecutiveRoutes');
-const documentRoutes = require('./routes/documentRoutes');
-const statusRoutes = require('./routes/statusRoutes');
 const rolRoutes = require('./routes/rolRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -190,9 +187,6 @@ app.post('/api/auth/register', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', rolRoutes);
-app.use('/api/consecutives', consecutiveRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/status', statusRoutes);
 
 app.use(errorHandler);
 
