@@ -70,10 +70,6 @@ async function setupMongoDB() {
     const collections = [
       'rol',
       'user',
-      'status',
-      'consecutive',
-      'document',
-      'count'  // Aquí se añade la colección count para el contador
     ];
 
     for (const collectionName of collections) {
@@ -89,9 +85,6 @@ async function setupMongoDB() {
       }
     }
 
-    const countCollection = appClient.db(dbName).collection('count');
-    await countCollection.createIndex({ id: 1 }, { unique: true });
-    await countCollection.createIndex({ count: 1 });
 
     // Índices
     const rolCollection = appClient.db(dbName).collection('rol');
@@ -102,21 +95,6 @@ async function setupMongoDB() {
     await userCollection.createIndex({ id: 1 }, { unique: true });
     await userCollection.createIndex({ name: 1 });
     await userCollection.createIndex({ id_rol: 1 });
-
-    const statusCollection = appClient.db(dbName).collection('status');
-    await statusCollection.createIndex({ id: 1 }, { unique: true });
-    await statusCollection.createIndex({ name: 1 }, { unique: true });
-
-    const consecutiveCollection = appClient.db(dbName).collection('consecutive');
-    await consecutiveCollection.createIndex({ id: 1 }, { unique: true });
-    await consecutiveCollection.createIndex({ id_status: 1 });
-    await consecutiveCollection.createIndex({ id_user: 1 });
-    await consecutiveCollection.createIndex({ date_soli: 1 });
-
-    const documentCollection = appClient.db(dbName).collection('document');
-    await documentCollection.createIndex({ id: 1 }, { unique: true });
-    await documentCollection.createIndex({ id_consecutive: 1 });
-    await documentCollection.createIndex({ date_charge: 1 });
 
     // Finalización
     console.log('\n✅ Configuración de MongoDB completada exitosamente!');
