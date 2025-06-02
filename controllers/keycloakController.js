@@ -15,11 +15,16 @@ const transporter = nodemailer.createTransport({
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080';
 const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'master';
 const KEYCLOAK_ADMIN_CLIENT_ID = process.env.KEYCLOAK_ADMIN_CLIENT_ID || 'backend-admin-client';
-const KEYCLOAK_ADMIN_CLIENT_SECRET = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET || 'UyoF2LQOgTs7XZNHRUYmRM7J6SJYPQod';
+const KEYCLOAK_ADMIN_CLIENT_SECRET = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET || 'LDq7QzimGYi7I292LAocKHCuzkCS4RqE';
 const KEYCLOAK_FRONTEND_CLIENT_ID = process.env.KEYCLOAK_FRONTEND_CLIENT_ID || 'frontend-client';
-const KEYCLOAK_FRONTEND_CLIENT_SECRET = process.env.KEYCLOAK_FRONTEND_CLIENT_SECRET || '6eS1rx8MZfYQRLoxpxbldfrafU8nCIGt';
+const KEYCLOAK_FRONTEND_CLIENT_SECRET = process.env.KEYCLOAK_FRONTEND_CLIENT_SECRET || 'Y2xvqiEs87OH5ckOise9qIplLoEjf4zK';
 
 async function getKeycloakAdminToken() {
+    console.log('KEYCLOAK_URL:', KEYCLOAK_URL);
+    console.log('KEYCLOAK_REALM:', KEYCLOAK_REALM);
+    console.log('KEYCLOAK_ADMIN_CLIENT_ID:', KEYCLOAK_ADMIN_CLIENT_ID);
+    console.log('KEYCLOAK_ADMIN_CLIENT_SECRET:', KEYCLOAK_ADMIN_CLIENT_SECRET);
+
     try {
         const response = await axios.post(
             `${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token`,
@@ -100,7 +105,7 @@ exports.verifyLoginToken = async (req, res) => {
         try {
             const adminToken = await getKeycloakAdminToken();
             console.log('Obtenido token de administrador, intentando acceder a usuarios...');
-            
+
             // Check if user exists in Keycloak
             try {
                 const userResponse = await axios.get(
@@ -113,9 +118,9 @@ exports.verifyLoginToken = async (req, res) => {
                 );
 
                 console.log('Respuesta de keycloak', userResponse.status);
-                
+
                 let keycloakUserId;
-                
+
                 if (userResponse.data && userResponse.data.length > 0) {
                     // User exists, get ID
                     keycloakUserId = userResponse.data[0].id;
@@ -135,7 +140,7 @@ exports.verifyLoginToken = async (req, res) => {
                             }
                         }
                     );
-                    
+
                     // Get the user ID of the newly created user
                     const newUserResponse = await axios.get(
                         `${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/users?email=${encodeURIComponent(user.email)}`,
@@ -145,10 +150,10 @@ exports.verifyLoginToken = async (req, res) => {
                             }
                         }
                     );
-                    
+
                     keycloakUserId = newUserResponse.data[0].id;
                 }
-                
+
                 // Set temporary password matching token
                 await axios.put(
                     `${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/users/${keycloakUserId}/reset-password`,
@@ -164,7 +169,7 @@ exports.verifyLoginToken = async (req, res) => {
                         }
                     }
                 );
-                
+
                 // Now authenticate with Keycloak using a client configured for password grants
                 const loginResponse = await axios.post(
                     `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`,
@@ -186,16 +191,16 @@ exports.verifyLoginToken = async (req, res) => {
                 if (!user.keycloakId) {
                     await User.findByIdAndUpdate(user._id, { keycloakId: keycloakUserId });
                 }
-                
+
                 // Update metadata
-                await User.findByIdAndUpdate(user._id, { 
+                await User.findByIdAndUpdate(user._id, {
                     $unset: { loginToken: 1, loginTokenExpires: 1 },
                     $set: { 'metadata.lastLogin': new Date() },
                     $inc: { 'metadata.loginCount': 1 }
                 });
 
                 res.json(loginResponse.data);
-                
+
             } catch (keycloakError) {
                 console.error('Error al gestionar el usuario en Keycloak:', keycloakError.response ? keycloakError.response.data : keycloakError.message);
                 return res.status(500).json({ message: 'Error al gestionar la autenticación.' });
