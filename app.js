@@ -13,15 +13,15 @@ require('dotenv').config();
 const app = express();
 
 // Configuración de Keycloak
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080';
-const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'master';
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL;
+const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM;
 const KEYCLOAK_ADMIN_CLIENT_ID = process.env.KEYCLOAK_ADMIN_CLIENT_ID || 'backend-admin-client';
 const KEYCLOAK_ADMIN_CLIENT_SECRET = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET || 'LDq7QzimGYi7I292LAocKHCuzkCS4RqE';
 
 // Middlewares
 app.use(express.json());
 app.use(cors({
-    origin: ['http://192.168.1.16:4200', 'http://localhost:4200'],
+    origin: ['http://192.168.1.6:4200', 'http://localhost:4200'],
     credentials: true
 }));
 app.use(helmet({

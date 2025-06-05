@@ -3,8 +3,8 @@ const jwksClient = require('jwks-rsa');
 const axios = require('axios');
 require('dotenv').config();
 
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080';
-const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'master';
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL;
+const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM;
 
 // Cliente para verificación de tokens JWT con claves RSA de Keycloak
 const client = jwksClient({

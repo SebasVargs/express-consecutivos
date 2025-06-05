@@ -6,8 +6,8 @@ const app = express();
 app.use(express.json());
 
 // Configuración de Keycloak - Ajustada para versiones recientes de Keycloak
-const KEYCLOAK_URL = 'http://localhost:8080'; // Eliminamos '/auth' de la URL base
-const KEYCLOAK_REALM = 'master';
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL;
+const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM;
 const KEYCLOAK_ADMIN_CLIENT_ID = 'backend-admin-client'; // Cliente con roles de admin
 const KEYCLOAK_ADMIN_CLIENT_SECRET = 'LDq7QzimGYi7I292LAocKHCuzkCS4RqE'; // Secreto del cliente admin
 

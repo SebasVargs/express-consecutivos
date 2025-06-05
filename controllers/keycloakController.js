@@ -12,8 +12,8 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080';
-const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'master';
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL;
+const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM;
 const KEYCLOAK_ADMIN_CLIENT_ID = process.env.KEYCLOAK_ADMIN_CLIENT_ID || 'backend-admin-client';
 const KEYCLOAK_ADMIN_CLIENT_SECRET = process.env.KEYCLOAK_ADMIN_CLIENT_SECRET || 'LDq7QzimGYi7I292LAocKHCuzkCS4RqE';
 const KEYCLOAK_FRONTEND_CLIENT_ID = process.env.KEYCLOAK_FRONTEND_CLIENT_ID || 'frontend-client';
